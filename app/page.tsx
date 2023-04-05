@@ -1,90 +1,86 @@
-import Image from 'next/image'
-import { Inter } from 'next/font/google'
-import styles from './page.module.css'
+"use client"
+import { useState } from 'react'
+import data from './config.json'
 
-const inter = Inter({ subsets: ['latin'] })
+interface Question {
+  id?: string;
+  question: string;
+  answers: Answer[];
+}
+
+interface Answer {
+  answer: string;
+  next: Question | string;
+}
 
 export default function Home() {
+  const [currentQuestion, setCurrentQuestion] = useState<Question>(data);
+
+  function findObjectById(id: string, obj: Question): Question | null {
+    if (obj.id === id) {
+      return obj;
+    }
+    if (obj.answers) {
+      for (let i = 0; i < obj.answers.length; i++) {
+        const result = findObjectById(id, obj.answers[i].next as Question);
+        if (result) {
+          return result;
+        }
+      }
+    }
+    return null;
+  }
+
+  function handleAnswer(answer: string) {
+    const nextQuestion = currentQuestion.answers.find((a: { answer: string; }) => a.answer === answer)?.next;
+    if (typeof nextQuestion === 'string' && nextQuestion === "done") {
+      setCurrentQuestion(data);
+    } else if (nextQuestion) {
+      const nextQuestionData = typeof nextQuestion === 'string' ? findObjectById(nextQuestion, data) : nextQuestion;
+      if (nextQuestionData)
+        setCurrentQuestion(nextQuestionData);
+      else
+        console.error('Could not find next question');
+    }
+  }
+  
   return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>app/page.tsx</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
-
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-        <div className={styles.thirteen}>
-          <Image src="/thirteen.svg" alt="13" width={40} height={31} priority />
-        </div>
-      </div>
-
-      <div className={styles.grid}>
-        <a
-          href="https://beta.nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={inter.className}>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p className={inter.className}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={inter.className}>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p className={inter.className}>Explore the Next.js 13 playground.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={inter.className}>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p className={inter.className}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
+    <main style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: '100vh',
+      fontFamily: 'Candara, Optima, Helvetica, Roboto, sans-serif',
+      fontWeight: 'bold',
+    }}>
+      <h1 style={{
+        color: 'white',
+        fontSize: '2rem',
+        textAlign: 'left',
+        margin: '2rem',
+        width: '60%'
+      }} className='question'>{currentQuestion.question}</h1>
+      <div>
+        {currentQuestion.answers.map((a: { answer: string; }) => (
+        <button
+          style={{
+            color: 'black',
+            backgroundColor: 'white',
+            border: 'none',
+            padding: '1rem',
+            margin: '1rem',
+            fontSize: '1.5rem',
+            fontWeight: 'bold',
+            borderRadius: '0.5rem',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease-in-out',
+          }}
+          className='answer-button'
+          onClick={() => handleAnswer(a.answer)}
+          key={a.answer}
+        >{a.answer}</button>
+        ))}
       </div>
     </main>
   )
